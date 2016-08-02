@@ -3,6 +3,7 @@ from __future__ import division, absolute_import, unicode_literals
 
 import re
 from io import StringIO
+import fnmatch
 
 from . import core
 from . import gitcfg
@@ -445,8 +446,9 @@ def untrack_paths(args, head='HEAD'):
 def not_match_target(path, patterns):
     tokens = path.split('/')
     for pattern in patterns:
-        if pattern in tokens:
-            return False
+        for token in tokens:
+            if fnmatch.fnmatch(token, pattern):
+                return False
     return True
 
 
