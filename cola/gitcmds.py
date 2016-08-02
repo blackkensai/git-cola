@@ -442,6 +442,39 @@ def untrack_paths(args, head='HEAD'):
     return git.update_index('--', force_remove=True, *set(args))
 
 
+def not_match_target(path, patterns):
+    tokens = path.split('/')
+    for pattern in patterns:
+        if pattern in tokens:
+            return False
+    return True
+
+
+def filter_targets(list):
+    import json
+    import os.path
+    CONFIG_FILE = '.git-cola-skip'
+    patterns = []
+    if not os.path.exists(CONFIG_FILE):
+        print('''Config not exist, place a %s in %s to work.
+eg:
+{
+    "enabled": 1,
+    "patterns": [
+        "target", ".classpath", ".settings", ".project", ".gitignore"
+    ]
+}
+''' % (CONFIG_FILE, os.getcwd()))
+        return list
+    with open(CONFIG_FILE) as fh:
+        config = json.load(fh)
+        if config['enabled'] == 1:
+            patterns = config['patterns']
+        else:
+            print('Ignore disabled config')
+    return [v for v in list if not_match_target(v, patterns)]
+
+
 def worktree_state(head='HEAD',
                    update_index=False,
                    display_untracked=True,
@@ -467,6 +500,15 @@ def worktree_state(head='HEAD',
 
     # Look for upstream modified files if this is a tracking branch
     upstream_changed = diff_upstream(head)
+
+    # TODO by bk, do filter here
+    staged = filter_targets(staged)
+    modified = filter_targets(modified)
+    unmerged = filter_targets(unmerged)
+    untracked = filter_targets(untracked)
+    upstream_changed = filter_targets(upstream_changed)
+    staged_deleted = filter_targets(staged_deleted)
+    unstaged_deleted = filter_targets(unstaged_deleted)
 
     # Keep stuff sorted
     staged.sort()
