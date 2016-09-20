@@ -451,22 +451,27 @@ def not_match_target(path, patterns):
                 return False
     return True
 
+git_cola_skip_hint = False
+
 
 def filter_targets(list):
+    global git_cola_skip_hint
     import json
     import os.path
     CONFIG_FILE = '.git-cola-skip'
     patterns = []
     if not os.path.exists(CONFIG_FILE):
-        print('''Config not exist, place a %s in %s to work.
-eg:
-{
-    "enabled": 1,
-    "patterns": [
-        "target", ".classpath", ".settings", ".project", ".gitignore"
-    ]
-}
-''' % (CONFIG_FILE, os.getcwd()))
+        if not git_cola_skip_hint:
+            print('''Config not exist, place a %s in %s to work.
+    eg:
+    {
+        "enabled": 1,
+        "patterns": [
+            "target", ".classpath", ".settings", ".project", ".gitignore"
+        ]
+    }
+    ''' % (CONFIG_FILE, os.getcwd()))
+            git_cola_skip_hint = True
         return list
     with open(CONFIG_FILE) as fh:
         config = json.load(fh)
